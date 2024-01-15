@@ -38,7 +38,9 @@
         android:padding="20sp"
         android:textColor="@color/purple_200"
         android:textColorHint="@color/purple_200"
-        android:autofillHints="Username" />
+        android:autofillHints="Username"
+        android:inputType="text"
+        />
 
     <EditText
         android:id="@+id/password"
@@ -52,7 +54,7 @@
         android:textColorHint="@color/purple_200"
         android:layout_margin="10sp"
         android:padding="20sp"
-        android:drawableLeft="@drawable/baseline_password_24"
+        android:drawableStart="@drawable/baseline_password_24"
         android:drawablePadding="20sp"
 
         android:inputType="textPassword"

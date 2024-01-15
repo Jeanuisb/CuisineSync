@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Gradient Bg for the login screen -->
+    <gradient
+        android:angle="100"
+        android:endColor="#FF4081"
+        android:startColor="#3F51B5"
+        android:type="linear" />
+    <!-- Rounded Corners -->
+    <corners
+        android:bottomLeftRadius="0dp"
+        android:bottomRightRadius="0dp"
+        android:topLeftRadius="0dp"
+        android:topRightRadius="0dp" />
+</shape>

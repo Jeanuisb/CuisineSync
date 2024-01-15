@@ -37,7 +37,8 @@
         android:hint="Username"
         android:padding="20sp"
         android:textColor="@color/purple_200"
-        android:textColorHint="@color/purple_200" />
+        android:textColorHint="@color/purple_200"
+        android:autofillHints="Username" />
 
     <EditText
         android:id="@+id/password"

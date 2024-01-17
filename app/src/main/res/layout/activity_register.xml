@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".RegisterActivity"
+    android:textHintColor="#9575CD">
+
+    <TextView
+        android:id="@+id/signup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
+        android:gravity="center"
+        android:text="@string/sign_up"
+        android:textColor="#9575CD"
+        android:textSize="35sp"
+        android:textStyle="bold" />
+
+    <!-- First Name Input -->
+    <EditText
+        android:id="@+id/first_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/signup"
+        android:layout_marginStart="10sp"
+        android:layout_marginTop="10sp"
+        android:layout_marginEnd="10sp"
+        android:layout_marginBottom="10sp"
+        android:background="@drawable/rounded_corner"
+        android:drawableStart="@drawable/baseline_person_24"
+        android:drawablePadding="20sp"
+        android:hint="@string/first_name"
+        android:inputType="text"
+        android:padding="20sp"
+        />
+
+    <!-- Last Name Input -->
+    <EditText
+        android:id="@+id/last_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/first_name"
+        android:layout_marginStart="10sp"
+        android:layout_marginTop="10sp"
+        android:layout_marginEnd="10sp"
+        android:layout_marginBottom="10sp"
+        android:background="@drawable/rounded_corner"
+        android:drawableStart="@drawable/baseline_person_24"
+        android:drawablePadding="20sp"
+        android:hint="@string/last_name"
+        android:inputType="text"
+        android:padding="20sp" />
+
+    <!-- Email Input -->
+    <EditText
+        android:id="@+id/email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/last_name"
+        android:layout_marginStart="10sp"
+        android:layout_marginTop="10sp"
+        android:layout_marginEnd="10sp"
+        android:layout_marginBottom="10sp"
+        android:background="@drawable/rounded_corner"
+        android:drawableStart="@drawable/baseline_email_24"
+        android:drawablePadding="20sp"
+        android:hint="@string/email"
+        android:inputType="textEmailAddress"
+        android:padding="20sp"
+        android:textColor="@color/purple_200"
+        android:textColorHint="#7C4DFF" />
+
+
+
+    <!-- Password Input (from the login layout) -->
+    <EditText
+        android:id="@+id/password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/date_of_birth"
+        android:layout_marginStart="10sp"
+        android:layout_marginTop="10sp"
+        android:layout_marginEnd="10sp"
+        android:layout_marginBottom="10sp"
+        android:background="@drawable/rounded_corner"
+        android:drawableStart="@drawable/baseline_password_24"
+        android:drawablePadding="20sp"
+        android:hint="@string/password"
+        android:inputType="textPassword"
+        android:padding="20sp"
+        android:textColorHint="#7C4DFF" />
+
+    <!-- Confirm Password Input -->
+    <EditText
+        android:id="@+id/confirm_password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/password"
+        android:layout_marginStart="10sp"
+        android:layout_marginTop="10sp"
+        android:layout_marginEnd="10sp"
+        android:layout_marginBottom="10sp"
+        android:background="@drawable/rounded_corner"
+        android:drawableStart="@drawable/baseline_password_24"
+        android:drawablePadding="20sp"
+        android:hint="@string/confirm_password"
+        android:inputType="textPassword"
+        android:padding="20sp"
+        android:textColorHint="#7C4DFF" />
+
+    <!-- Register Button -->
+    <Button
+        android:id="@+id/registerbtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/terms_conditions"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="20sp"
+        android:layout_marginTop="20sp"
+        android:layout_marginEnd="20sp"
+        android:layout_marginBottom="20sp"
+        android:backgroundTint="@color/common_google_signin_btn_text_dark_default"
+        android:minHeight="48dp"
+        android:text="@string/register"
+        android:textColor="#7C4DFF" />
+
+    <!-- Terms and Conditions -->
+
+    <CheckBox
+        android:id="@+id/terms_conditions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/confirm_password"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="20sp"
+        android:layout_marginTop="20sp"
+        android:layout_marginEnd="20sp"
+        android:layout_marginBottom="20sp"
+        android:minWidth="40dp"
+        android:minHeight="48dp"
+        android:text="I agree to the Terms and Conditions"
+        android:textColor="#7C4DFF" />
+
+
+
+    <EditText
+        android:id="@+id/date_of_birth"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/email"
+        android:layout_marginStart="10sp"
+        android:layout_marginTop="10sp"
+        android:layout_marginEnd="10sp"
+        android:layout_marginBottom="10sp"
+        android:background="@drawable/rounded_corner"
+        android:drawableStart="@drawable/baseline_calendar_today_24"
+        android:drawablePadding="20sp"
+        android:hint="@string/date_of_birth"
+        android:inputType="date"
+        android:padding="20sp" />
+
+
+</RelativeLayout>
+

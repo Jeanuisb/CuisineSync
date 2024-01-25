@@ -1,4 +1,7 @@
+# Note, to run script, run python3 -m scripts.test_script in terminal
+
 # Import the search_restaurants function from api.py
+
 from modules.api import search_restaurants
 
 # Define search parameters

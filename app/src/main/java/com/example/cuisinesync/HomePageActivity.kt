@@ -15,7 +15,7 @@ class HomePageActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding= ActivityHomePageBinding.inflate(layoutInflater)
-        val view=binding.root
+
         setContentView(R.layout.activity_home_page)
 
         val mapFragment=MapFragment()

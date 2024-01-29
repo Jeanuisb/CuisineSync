@@ -24,4 +24,7 @@
     <string name="settings">Settings</string>
     <string name="homepage">HomePage</string>
     <string name="my_profile">My Profile</string>
+    <string name="google_">google sign</string>
+    <string name="facebook_login">facebook sign. tap to log into facebook</string>
+    <string name="twitter_login">twitter sign\n</string>
 </resources>

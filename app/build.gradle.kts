@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+    id("io.realm.kotlin")
 
 }
 
@@ -69,6 +70,9 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.6")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.6")
+    implementation("io.realm.kotlin:library-base:1.11.0")
+    implementation("io.realm.kotlin:library-sync:1.11.0") // If using Device Sync
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1") // If using coroutines with the SDK
 
     testImplementation("junit:junit:4.13.2")
 

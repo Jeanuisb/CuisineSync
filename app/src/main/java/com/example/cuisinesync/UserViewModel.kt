@@ -15,7 +15,7 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
 
     fun registerUser(userData: UserRepository.UserData) {
         viewModelScope.launch {
-            // Here, you're passing the entire userData object to the repository
+             //passing the entire userData object to the repository
             _registrationStatus.value = repository.registerUser(userData)
         }
     }

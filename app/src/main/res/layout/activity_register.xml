@@ -45,7 +45,7 @@
     <!-- Last Name Input -->
     <EditText
         android:id="@+id/last_name"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:background="@drawable/rounded_corner"
@@ -120,7 +120,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:backgroundTint="@color/common_google_signin_btn_text_dark_default"
+        android:backgroundTint="@color/white"
         android:minHeight="48dp"
         android:text="@string/register"
         android:textColor="#7C4DFF"

@@ -29,7 +29,7 @@ class RegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
-        // Initialize Realm app and ViewModel
+
         val realmApp = application as MyApplication // Replace with your actual App ID
         val userRepository = UserRepository(realmApp.realmApp)
         viewModel = ViewModelProvider(
@@ -155,7 +155,6 @@ class RegisterActivity : AppCompatActivity() {
         val intent = Intent(this, LogInActivity::class.java)
         startActivity(intent)
 
-        // Optionally, you can finish the current activity if you don't want users to return to it
         finish()
     }
 

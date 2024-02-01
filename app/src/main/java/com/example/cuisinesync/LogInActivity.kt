@@ -27,7 +27,6 @@ class LogInActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
         Toast.makeText(this@LogInActivity,"abc",Toast.LENGTH_SHORT).show()
 
-
         val myApplication = application as MyApplication
         realmApp = myApplication.realmApp
 

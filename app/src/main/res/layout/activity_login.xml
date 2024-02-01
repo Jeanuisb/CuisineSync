@@ -88,19 +88,19 @@
         android:text="@string/register"
         android:textColor="#7C4DFF"
         android:textSize="15sp"
-
+        
         />
 
     <Button
         android:id="@+id/loginbtn"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="148dp"
+        android:layout_marginTop="144dp"
         android:background="@drawable/rounded_corner"
         android:text="@string/login"
         android:textColor="#7C4DFF"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/password" />
 

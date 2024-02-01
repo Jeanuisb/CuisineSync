@@ -3,57 +3,69 @@ package com.example.cuisinesync
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
+import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.example.cuisinesync.databinding.ActivityLoginBinding
 import io.realm.kotlin.mongodb.App
 import io.realm.kotlin.mongodb.Credentials
 import kotlinx.coroutines.launch
 
+
 class LogInActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityLoginBinding
+    private lateinit var username: EditText
+    private lateinit var password: EditText
+    private lateinit var loginbtn: Button
+    private lateinit var registerbtn: Button
+
     private lateinit var realmApp: App
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(binding.root)
-
-        Toast.makeText(this, "Welcome to CuisineSync!", Toast.LENGTH_SHORT).show()
+        setContentView(R.layout.activity_login)
+        Toast.makeText(this@LogInActivity,"abc",Toast.LENGTH_SHORT).show()
 
 
         val myApplication = application as MyApplication
         realmApp = myApplication.realmApp
 
+        username = findViewById(R.id.username)
+        password = findViewById(R.id.password)
+        loginbtn = findViewById(R.id.loginbtn)
+        registerbtn = findViewById(R.id.register_login)
+        Log.e("LogInActivity", "Failed to navigate to RegisterActivity")
 
-        setupClickListeners()
-    }
+            registerbtn.setOnClickListener {
+                // Code here executes on main thread after user presses button
 
-    private fun setupClickListeners() {
-        binding.loginbtn.setOnClickListener {
-             // Disable the button to prevent multiple submissions
+                val intent = Intent(this@LogInActivity, RegisterActivity::class.java)
+                startActivity(intent)
+            }
+
+        loginbtn.setOnClickListener {
+            // Code here executes on main thread after user presses button
+            loginbtn.isEnabled = false // Disable the button until attempt is complete
             lifecycleScope.launch {
                 performLogin()
-
             }
-        }
-
-        binding.registerLogin.setOnClickListener {
-            Log.d("LogInActivity", "Register button clicked") // Debug log
-            navigateToRegisterActivity()
         }
     }
 
+
+
+
+
     private suspend fun performLogin() {
-        val enteredUsername = binding.username.text.toString()
-        val enteredPassword = binding.password.text.toString()
+        val enteredUsername = username.text.toString()
+        val enteredPassword = password.text.toString()
 
         if (enteredUsername.isNotBlank() && enteredPassword.isNotBlank()) {
             authenticateUser(enteredUsername, enteredPassword)
         } else {
             showToast("Please enter both username and password")
-            binding.loginbtn.isEnabled = true // Re-enable the button if validation fails
+            loginbtn.isEnabled = true // Re-enable the button if validation fails
         }
     }
 
@@ -69,13 +81,13 @@ class LogInActivity : AppCompatActivity() {
         } catch (e: Exception) {
             showLoginFailedToast(e.message)
         }
-        binding.loginbtn.isEnabled = true // Re-enable the button after attempt
+        loginbtn.isEnabled = true // Re-enable the button after attempt
     }
 
     private fun navigateToHomePage() {
-        val homeIntent = Intent(this, RegisterActivity::class.java)
+        val homeIntent = Intent(this, HomePageActivity::class.java)
         startActivity(homeIntent)
-        finish() // Close the login activity
+        finish()
     }
 
     private fun navigateToRegisterActivity() {

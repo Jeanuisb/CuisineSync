@@ -85,24 +85,22 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/forgotpassword"
         android:background="@drawable/rounded_corner"
-        android:backgroundTint="@color/common_google_signin_btn_text_dark_default"
         android:text="@string/register"
         android:textColor="#7C4DFF"
         android:textSize="15sp"
-        
+
         />
 
     <Button
         android:id="@+id/loginbtn"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="144dp"
+        android:layout_marginTop="148dp"
         android:background="@drawable/rounded_corner"
-        android:backgroundTint="@color/common_google_signin_btn_text_dark_default"
         android:text="@string/login"
         android:textColor="#7C4DFF"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/password" />
 

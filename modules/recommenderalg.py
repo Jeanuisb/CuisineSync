@@ -40,8 +40,8 @@ def recommendation(member_to_preferences):
             else:
                 tally_dict[value] = 1
     tally_dict = sort_dict_by_value(tally_dict)
-    max_val = max(tally_dict, key=tally_dict.get)
-
+    max_key = max(tally_dict, key=tally_dict.get)
+    max_val = tally_dict[max_key]
     for key,val in tally_dict.items():
         retrieval = tally_dict[key]
         if (max_val == retrieval):
@@ -55,8 +55,9 @@ def recommendation(member_to_preferences):
         additionalcheck = int(input("Would you like to search for multiple cuisines and decide from the options, or let algorithm decide for you? (0 for first option, 1 for second) "))
         if additionalcheck == 0:
             for search_term in keys:
-                print("Searching for " + search_term + "restaurants in " + location)
+                print("Searching for " + search_term + " restaurants in " + location)
                 result = yelp.search_query(term = search_term, location = location, sort_by = 'rating', limit = '5')
+                processyelp(result)
         else:
             pass
 

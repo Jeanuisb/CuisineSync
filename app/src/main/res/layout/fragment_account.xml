@@ -9,10 +9,10 @@
     tools:context=".HomePageActivity">
 
     <TextView
-        android:id="@+id/settingFragment"
+        android:id="@+id/accountFragment"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/settings"
+        android:text="@string/account"
         android:textColor="#43a047"
         android:textSize="40sp"
         android:textStyle="italic|bold"

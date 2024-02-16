@@ -54,8 +54,6 @@ class LogInActivity : AppCompatActivity() {
 
 
 
-
-
     private suspend fun performLogin() {
         val enteredUsername = username.text.toString()
         val enteredPassword = password.text.toString()

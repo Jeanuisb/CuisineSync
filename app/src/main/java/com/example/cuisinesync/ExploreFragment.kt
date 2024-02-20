@@ -4,25 +4,37 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.DialogInterface
-import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.places.api.Places
@@ -30,9 +42,14 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 
+
 class ExploreFragment : Fragment(), OnMapReadyCallback{
 
     private var map: GoogleMap? = null
+    private var cameraPosition: CameraPosition? = null
+
+    // Define an ActivityResultLauncher for the permission request
+    private lateinit var locationPermissionLauncher: ActivityResultLauncher<String>
 
     // The entry point to the Places API.
     private lateinit var placesClient: PlacesClient
@@ -43,6 +60,8 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
     //the lat-lang of Rhodes College Memphis, TN
     private val defaultLocation = LatLng(35.15571630877271, -89.98937221901873)
     private var locationPermissionGranted = false
+    private var locationRequest: LocationRequest? = null
+
 
     // The geographical location where the device is currently located. That is, the last-known
     // location retrieved by the Fused Location Provider.
@@ -50,21 +69,62 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
     private var likelyPlaceNames: Array<String?> = arrayOfNulls(0)
     private var likelyPlaceAddresses: Array<String?> = arrayOfNulls(0)
     private var likelyPlaceAttributions: Array<List<*>?> = arrayOfNulls(0)
-    private var likelyPlaceLatLngs: Array<LatLng?> = arrayOfNulls(0)
+    private var likelyPlaceLatLng: Array<LatLng?> = arrayOfNulls(0)
+
+    private val locationPermissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        locationPermissionGranted = isGranted
+        if (isGranted) {
+            updateLocationUI()
+            getDeviceLocation()
+        } else {
+            // Handle the case where permission is denied
+            lastKnownLocation = null
+            updateLocationUI()
+            // You might want to show a rationale or guide the user to settings
+        }
+    }
 
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Initialize Places and FusedLocationProviderClient
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
+        // Initialize the ActivityResultLauncher
+        locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            // Update the permission state and UI accordingly
+            locationPermissionGranted = isGranted
+            if (isGranted) {
+                updateLocationUI()
+                getDeviceLocation()
+            } else {
+                // Handle the case where permission is denied
+                updateLocationUI()
+                // Consider guiding the user on how to grant the permission
+            }
+        }
+
+    }
+
+
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        setupMenu()
 
-        val maps_api_key = BuildConfig.MAPS_API_KEY
+        if (savedInstanceState != null) {
+            lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION, Location::class.java)
+            cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION, CameraPosition::class.java)
+        }
 
-        Places.initialize(requireActivity(), maps_api_key )
+        val mapsApiKey = BuildConfig.MAPS_API_KEY
+
+        Places.initialize(requireActivity(), mapsApiKey )
         Places.createClient(requireActivity())
-
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-        getLocationPermission()
 
         // Initialize view
         val view: View = inflater.inflate(R.layout.fragment_explore, container, false)
@@ -72,57 +132,76 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         // Initialize map fragment
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.google_map) as SupportMapFragment?
-        mapFragment?.getMapAsync(this)
-
+        mapFragment?.getMapAsync { googleMap ->
+            map = googleMap
+            // Once map is ready, check permissions and update UI accordingly
+            if (locationPermissionGranted) {
+                updateLocationUI()
+                getDeviceLocation()
+            } else {
+                // Request location permission
+                requestLocationPermission()
+            }
+        }
         // Return view
         return view
     }
 
-
-    private fun getLocationPermission() {
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
-        if (ContextCompat.checkSelfPermission(requireActivity(),
-                Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_GRANTED) {
-            locationPermissionGranted = true
-        } else {
-            ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int,
-                                            permissions: Array<String>,
-                                            grantResults: IntArray) {
-        locationPermissionGranted = false
-        when (requestCode) {
-            PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION -> {
-
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.isNotEmpty() &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    locationPermissionGranted = true
-                }
+    private fun setupMenu() {
+        (requireActivity() as MenuHost).addMenuProvider(object : MenuProvider {
+            override fun onPrepareMenu(menu: Menu) {
+                // Handle for example visibility of menu items
             }
-            else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        }
-        updateLocationUI()
+
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.current_place_menu, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                // Validate and handle the selected menu item
+                if (menuItem.itemId == R.id.option_get_place) {
+                    showCurrentPlace()
+                }
+                return true
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        map?.let { map ->
+            outState.putParcelable(KEY_CAMERA_POSITION, map.cameraPosition)
+            outState.putParcelable(KEY_LOCATION, lastKnownLocation)
+        }
+        super.onSaveInstanceState(outState)
+    }
 
 
     //Sets up map and makes sure the camera moves to the last known location
     override fun onMapReady(p0: GoogleMap) {
 
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            val success: Boolean = p0.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    requireActivity(), R.raw.style_json
+                )
+            )
+            if (!success) {
+                Log.e(TAG, "Style parsing failed.")
+            }
+        } catch (e: Resources.NotFoundException) {
+            Log.e(TAG, "Can't find style. Error: ", e)
+        }
+
+        this.map = p0
         // [START_EXCLUDE]
         // [START map_current_place_set_info_window_adapter]
         // Use a custom info window adapter to handle multiple lines of text in the
         // info window contents.
+
+
         this.map?.setInfoWindowAdapter(object : GoogleMap.InfoWindowAdapter {
             // Return null here, so that getInfoContents() is called next.
             override fun getInfoWindow(arg0: Marker): View? {
@@ -160,25 +239,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
 
     }
 
-    @SuppressLint("MissingPermission")
-    private fun updateLocationUI() {
-        if (map == null) {
-            return
-        }
-        try {
-            if (locationPermissionGranted) {
-                map?.isMyLocationEnabled = true
-                map?.uiSettings?.isMyLocationButtonEnabled = true
-            } else {
-                map?.isMyLocationEnabled = false
-                map?.uiSettings?.isMyLocationButtonEnabled = false
-                lastKnownLocation = null
-                getLocationPermission()
-            }
-        } catch (e: SecurityException) {
-            Log.e("Exception: %s", e.message, e)
-        }
-    }
 
     @SuppressLint("MissingPermission")
     private fun getDeviceLocation() {
@@ -189,21 +249,21 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         try {
             if (locationPermissionGranted) {
                 val locationResult = fusedLocationProviderClient.lastLocation
-                locationResult.addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
+                locationResult.addOnCompleteListener(requireActivity()) { task ->
+                    if (task.isSuccessful && task.result != null) {
                         // Set the map's camera position to the current location of the device.
                         lastKnownLocation = task.result
-                        if (lastKnownLocation != null) {
-                            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                                LatLng(lastKnownLocation!!.latitude,
-                                    lastKnownLocation!!.longitude), DEFAULT_ZOOM.toFloat()))
-                        }
+                        map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            LatLng(lastKnownLocation!!.latitude,
+                                lastKnownLocation!!.longitude), DEFAULT_ZOOM.toFloat()))
                     } else {
                         Log.d(TAG, "Current location is null. Using defaults.")
                         Log.e(TAG, "Exception: %s", task.exception)
                         map?.moveCamera(CameraUpdateFactory
                             .newLatLngZoom(defaultLocation, DEFAULT_ZOOM.toFloat()))
                         map?.uiSettings?.isMyLocationButtonEnabled = false
+
+                        requestNewLocationData()
                     }
                 }
             }
@@ -212,12 +272,45 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.option_get_place) {
-            showCurrentPlace()
-        }
-        return true
+    @SuppressLint("MissingPermission")
+    private fun requestNewLocationData() {
+        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
+            .setWaitForAccurateLocation(false)
+            .setMinUpdateIntervalMillis(2000)
+            .setMaxUpdateDelayMillis(100)
+            .build()
+        fusedLocationProviderClient.requestLocationUpdates(locationRequest!!, locationCallback, Looper.myLooper())
     }
+
+
+    private val locationCallback = object : com.google.android.gms.location.LocationCallback() {
+        override fun onLocationResult(locationResult: com.google.android.gms.location.LocationResult) {
+            lastKnownLocation = locationResult.lastLocation
+            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                LatLng(lastKnownLocation!!.latitude,
+                    lastKnownLocation!!.longitude), DEFAULT_ZOOM.toFloat()))
+            fusedLocationProviderClient.removeLocationUpdates(this)
+        }
+    }
+
+
+
+    private fun getLocationPermission() {
+        // Instead of directly requesting permissions, use the launcher
+        locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+
+    /**
+     * Handles the result of the request for location permissions.
+     */
+    // [START maps_current_place_on_request_permissions_result]
+    private fun requestLocationPermission() {
+        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+
+    // [END maps_current_place_on_request_permissions_result]
+
+
 
     @SuppressLint("MissingPermission")
     private fun showCurrentPlace() {
@@ -248,13 +341,13 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
                     likelyPlaceNames = arrayOfNulls(count)
                     likelyPlaceAddresses = arrayOfNulls(count)
                     likelyPlaceAttributions = arrayOfNulls<List<*>?>(count)
-                    likelyPlaceLatLngs = arrayOfNulls(count)
+                    likelyPlaceLatLng = arrayOfNulls(count)
                     for (placeLikelihood in likelyPlaces?.placeLikelihoods ?: emptyList()) {
                         // Build a list of likely places to show the user.
                         likelyPlaceNames[i] = placeLikelihood.place.name
                         likelyPlaceAddresses[i] = placeLikelihood.place.address
                         likelyPlaceAttributions[i] = placeLikelihood.place.attributions
-                        likelyPlaceLatLngs[i] = placeLikelihood.place.latLng
+                        likelyPlaceLatLng[i] = placeLikelihood.place.latLng
                         i++
                         if (i > count - 1) {
                             break
@@ -286,7 +379,7 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
     private fun openPlacesDialog() {
         // Ask the user to choose the place where they are now.
         val listener = DialogInterface.OnClickListener { _, which -> // The "which" argument contains the position of the selected item.
-            val markerLatLng = likelyPlaceLatLngs[which]
+            val markerLatLng = likelyPlaceLatLng[which]
             var markerSnippet = likelyPlaceAddresses[which]
             if (likelyPlaceAttributions[which] != null) {
                 markerSnippet = """
@@ -318,20 +411,30 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
             .show()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        map?.let { map ->
-            outState.putParcelable(KEY_CAMERA_POSITION, map.cameraPosition)
-            outState.putParcelable(KEY_LOCATION, lastKnownLocation)
+    @SuppressLint("MissingPermission")
+    private fun updateLocationUI() {
+        if (map == null) {
+            return
         }
-        super.onSaveInstanceState(outState)
+        try {
+            if (locationPermissionGranted) {
+                map?.isMyLocationEnabled = true
+                map?.uiSettings?.isMyLocationButtonEnabled = true
+            } else {
+                map?.isMyLocationEnabled = false
+                map?.uiSettings?.isMyLocationButtonEnabled = false
+                lastKnownLocation = null
+                getLocationPermission()
+            }
+        } catch (e: SecurityException) {
+            Log.e("Exception: %s", e.message, e)
+        }
     }
-
 
 
     companion object {
         private val TAG = ExploreFragment::class.java.simpleName
         private const val DEFAULT_ZOOM = 15
-        private const val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
 
         // Keys for storing activity state.
         // [START maps_current_place_state_keys]
@@ -342,9 +445,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         // Used for selecting the current place.
         private const val M_MAX_ENTRIES = 5
     }
-
-
-
 
 
 }

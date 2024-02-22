@@ -1,3 +1,5 @@
+import org.apache.tools.ant.util.JavaEnvUtils.VERSION_1_8
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -65,11 +67,19 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.7.6")
-    implementation("androidx.navigation:navigation-ui-ktx:2.7.6")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
+    implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
     implementation("io.realm.kotlin:library-base:1.11.0")
     implementation("io.realm.kotlin:library-sync:1.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+
+    testImplementation("junit:junit:4.13.2")
+    implementation("org.mongodb:mongodb-driver-sync:4.11.1")
+    implementation("org.mongodb:mongodb-driver-kotlin-coroutine:4.11.0")
+    implementation("org.slf4j:slf4j-api:1.7.36")
+    implementation("ch.qos.logback:logback-classic:1.2.6")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
 
     testImplementation("junit:junit:4.13.2")
 

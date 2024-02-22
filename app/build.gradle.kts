@@ -1,4 +1,5 @@
 import org.apache.tools.ant.util.JavaEnvUtils.VERSION_1_8
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -7,9 +8,13 @@ plugins {
 
 }
 
+
 android {
     namespace = "com.example.cuisinesync"
     compileSdk = 34
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.example.cuisinesync"
@@ -22,6 +27,25 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        val keystoreFile = project.rootProject.file("secrets.properties")
+        val properties = Properties()
+        properties.load(keystoreFile.inputStream())
+
+        val apiKey = properties.getProperty("API_KEY") ?: ""
+        val mongo_login = properties.getProperty("MONGO_LOGIN") ?: ""
+
+        buildConfigField(
+            type = "String",
+            name = "API_KEY",
+            value = apiKey
+        )
+
+        buildConfigField(
+            type = "String",
+            name = "MONGO_LOGIN",
+            value = mongo_login
+        )
+
     }
 
     buildTypes {

@@ -25,7 +25,6 @@ class LogInActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-        Toast.makeText(this@LogInActivity,"abc",Toast.LENGTH_SHORT).show()
 
         val myApplication = application as MyApplication
         realmApp = myApplication.realmApp
@@ -87,15 +86,7 @@ class LogInActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun navigateToRegisterActivity() {
-        Log.d("LogInActivity", "Navigating to RegisterActivity") // Debug log
-        val intent = Intent(this, RegisterActivity::class.java)
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.e("LogInActivity", "Failed to navigate to RegisterActivity", e)
-        }
-    }
+    @Suppress("SameParameterValue")
 
     private fun showToast(message: String) {
         runOnUiThread {

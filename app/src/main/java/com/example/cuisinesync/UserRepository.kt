@@ -9,6 +9,7 @@ import io.realm.kotlin.mongodb.App
 import io.realm.kotlin.mongodb.Credentials
 import io.realm.kotlin.mongodb.User
 import io.realm.kotlin.mongodb.sync.SyncConfiguration
+import io.realm.kotlin.mongodb.syncSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.mongodb.kbson.ObjectId
@@ -54,9 +55,13 @@ class UserRepository(private val realmApp: App) {
 
                     // Add the new user to Realm if it's a new object
                     if (!userProfile.isManaged()) {
+
                         copyToRealm(userProfile)
                     }
                 }
+
+                realm.syncSession.uploadAllLocalChanges()
+
             } catch (e: Exception) {
                 // Handle error, log it or notify the user
                 Log.e("Realm", "Error storing user data in MongoDB: ${e.message}")
@@ -66,21 +71,13 @@ class UserRepository(private val realmApp: App) {
         }
     }
 
-
-
-
     data class UserData(
         val email: String,
         val firstName: String,
         val lastName: String,
         val dateOfBirth: String,
         val password: String
-
-    // Format this as needed
-        // Add other fields as necessary
     )
-
-
 
 }
 

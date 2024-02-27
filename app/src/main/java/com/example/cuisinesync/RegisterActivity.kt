@@ -19,8 +19,8 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var firstnameEditText: EditText
     private lateinit var lastnameEditText: EditText
     private lateinit var passwordEditText: EditText
-    private lateinit var confirmpasswordEditText: EditText
-    private lateinit var dateofbirthEditText: EditText
+    private lateinit var confirmPasswordEditText: EditText
+    private lateinit var dateOfBirthEditText: EditText
     private lateinit var progressBar: ProgressBar
 
     private lateinit var viewModel: UserViewModel
@@ -49,8 +49,8 @@ class RegisterActivity : AppCompatActivity() {
         firstnameEditText = findViewById(R.id.first_name)
         lastnameEditText = findViewById(R.id.last_name)
         passwordEditText = findViewById(R.id.password)
-        confirmpasswordEditText = findViewById(R.id.confirm_password)
-        dateofbirthEditText = findViewById(R.id.date_of_birth)
+        confirmPasswordEditText = findViewById(R.id.confirm_password)
+        dateOfBirthEditText = findViewById(R.id.date_of_birth)
         progressBar = findViewById(R.id.progressBar)
 
         val registerButton = findViewById<Button>(R.id.register_button)
@@ -76,9 +76,9 @@ class RegisterActivity : AppCompatActivity() {
         val password = passwordEditText.text.toString().trim()
         val firstName = firstnameEditText.text.toString().trim()
         val lastName = lastnameEditText.text.toString().trim()
-        val dateOfBirth = dateofbirthEditText.text.toString().trim()
+        val dateOfBirth = dateOfBirthEditText.text.toString().trim()
 
-        if (password == confirmpasswordEditText.text.toString().trim()) {
+        if (password == confirmPasswordEditText.text.toString().trim()) {
             progressBar.visibility = View.VISIBLE
             // Construct UserData object
             val userData = UserRepository.UserData(
@@ -91,7 +91,7 @@ class RegisterActivity : AppCompatActivity() {
             // Call viewModel to register user
             viewModel.registerUser(userData)
         } else {
-            confirmpasswordEditText.error = "Passwords do not match"
+            confirmPasswordEditText.error = "Passwords do not match"
         }
     }
 
@@ -137,12 +137,12 @@ class RegisterActivity : AppCompatActivity() {
                 return false
             }
 
-            passwordEditText.text.toString() != confirmpasswordEditText.text.toString() -> {
-                confirmpasswordEditText.error = "Passwords do not match"
+            passwordEditText.text.toString() != confirmPasswordEditText.text.toString() -> {
+                confirmPasswordEditText.error = "Passwords do not match"
                 return false
             }
 
-            !validateInput(dateofbirthEditText, "Please enter your date of birth") -> return false
+            !validateInput(dateOfBirthEditText, "Please enter your date of birth") -> return false
         }
         return true
     }

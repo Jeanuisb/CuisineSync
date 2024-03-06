@@ -7,6 +7,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import io.realm.kotlin.mongodb.App
 import io.realm.kotlin.mongodb.Credentials
@@ -19,12 +20,22 @@ class LogInActivity : AppCompatActivity() {
     private lateinit var password: EditText
     private lateinit var loginbtn: Button
     private lateinit var registerbtn: Button
+    private lateinit var viewModel: LoginViewModel
+
 
     private lateinit var realmApp: App
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+
+        val dataStore = (application as MyApplication).dataStore
+
+        val dataStoreRepository = DataStoreRepository(dataStore)
+        val viewModelFactory = LoginViewModelFactory(dataStoreRepository)
+        viewModel = ViewModelProvider(this, viewModelFactory)[LoginViewModel::class.java]
+
+        checkLoginStatus()
 
         val myApplication = application as MyApplication
         realmApp = myApplication.realmApp
@@ -70,6 +81,7 @@ class LogInActivity : AppCompatActivity() {
         try {
             val user = realmApp.login(emailPasswordCredentials)
             if (user.loggedIn) {
+                viewModel.saveLoginStatus(true)
                 navigateToHomePage()
             } else {
                 showLoginFailedToast()
@@ -100,4 +112,13 @@ class LogInActivity : AppCompatActivity() {
             Toast.makeText(this@LogInActivity, errorMessage, Toast.LENGTH_SHORT).show()
         }
     }
+    private fun checkLoginStatus() {
+        lifecycleScope.launch {
+            val isLoggedIn = viewModel.getLoginStatus()
+            if (isLoggedIn) {
+                navigateToHomePage()
+            }
+        }
+    }
+
 }

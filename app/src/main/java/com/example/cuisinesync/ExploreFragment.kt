@@ -16,14 +16,18 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -41,9 +45,24 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
+private const val BASE_URL = "https://api.yelp.com/v3/"
 
 class ExploreFragment : Fragment(), OnMapReadyCallback{
+
+    private val API_KEY = BuildConfig.YELP_API_KEY
+    private lateinit var rvRestaurants: RecyclerView
+
+
+    private var bottomSheetContainer: CoordinatorLayout? = null
+    private var bottomSheetLayout: LinearLayout? = null
+
 
     private var map: GoogleMap? = null
     private var cameraPosition: CameraPosition? = null
@@ -71,19 +90,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
     private var likelyPlaceAttributions: Array<List<*>?> = arrayOfNulls(0)
     private var likelyPlaceLatLng: Array<LatLng?> = arrayOfNulls(0)
 
-    private val locationPermissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-        locationPermissionGranted = isGranted
-        if (isGranted) {
-            updateLocationUI()
-            getDeviceLocation()
-        } else {
-            // Handle the case where permission is denied
-            lastKnownLocation = null
-            updateLocationUI()
-            // You might want to show a rationale or guide the user to settings
-        }
-    }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,10 +111,72 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
             }
         }
 
+
+        val restaurants = mutableListOf<YelpRestaurant>()
+        val adapter = RestaurantAdapter(requireContext(), restaurants)
+        rvRestaurants.adapter = adapter
+        rvRestaurants.layoutManager = LinearLayoutManager(requireContext())
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create()).build()
+
+        val yelpService = retrofit.create(YelpService::class.java)
+        yelpService.searchRestaurants("Bearer $API_KEY","restaurant", "Memphis").enqueue(object : Callback<YelpSearchResult> {
+            @SuppressLint("NotifyDataSetChanged")
+            override fun onResponse(call: Call<YelpSearchResult>, response: Response<YelpSearchResult>) {
+                Log.i(TAG,"onResponse $response")
+                val body = response.body()
+                if (body == null) {
+                    Log.w(TAG, "Did not receive valid response body from Yelp API... exiting")
+                    return
+                }
+                restaurants.addAll(body.restaurants)
+                adapter.notifyDataSetChanged()
+            }
+
+            override fun onFailure(call: Call<YelpSearchResult>, t: Throwable) {
+                Log.i(TAG,"onFailure $t")
+            }
+        })
+
+        initBottomSheet()
+
+
+    }
+
+    private fun initBottomSheet() {
+        val bottomSheetBehavior = BottomSheetBehavior.from(bottomSheetLayout!!)
+        bottomSheetBehavior.addBottomSheetCallback(object :
+            BottomSheetBehavior.BottomSheetCallback() {
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                adjustMapPaddingToBottomSheet()
+            }
+
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                adjustMapPaddingToBottomSheet()
+            }
+        })
+    }
+
+    private fun adjustMapPaddingToBottomSheet() {
+        map?.let { map ->
+            if (this.bottomSheetContainer != null && this.bottomSheetLayout != null) {
+                val bottomSheetContainerHeight = this.bottomSheetContainer!!.height
+                val currentBottomSheetTop = this.bottomSheetLayout!!.top
+                map.setPadding(
+                    0, // left
+                    0, // top
+                    0, // right
+                    bottomSheetContainerHeight - currentBottomSheetTop // bottom
+                )
+            }
+        }
     }
 
 
 
+    @SuppressLint("ClickableViewAccessibility")
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -120,14 +188,19 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
             lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION, Location::class.java)
             cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION, CameraPosition::class.java)
         }
+        rvRestaurants = view?.findViewById(R.id.rvRestaurants) ?: RecyclerView(requireContext())
+
 
         val mapsApiKey = BuildConfig.MAPS_API_KEY
+
+
 
         Places.initialize(requireActivity(), mapsApiKey )
         Places.createClient(requireActivity())
 
         // Initialize view
         val view: View = inflater.inflate(R.layout.fragment_explore, container, false)
+
 
         // Initialize map fragment
         val mapFragment =
@@ -143,6 +216,12 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
                 requestLocationPermission()
             }
         }
+
+        bottomSheetLayout = view.findViewById(R.id.bottom_sheet)
+        bottomSheetContainer = view.findViewById(R.id.root_coordinator_layout)
+
+
+
         // Return view
         return view
     }
@@ -167,7 +246,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
-
     override fun onSaveInstanceState(outState: Bundle) {
         map?.let { map ->
             outState.putParcelable(KEY_CAMERA_POSITION, map.cameraPosition)
@@ -175,7 +253,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         }
         super.onSaveInstanceState(outState)
     }
-
 
     //Sets up map and makes sure the camera moves to the last known location
     override fun onMapReady(p0: GoogleMap) {
@@ -236,9 +313,7 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         // Get the current location of the device and set the position of the map.
         getDeviceLocation()
 
-
     }
-
 
     @SuppressLint("MissingPermission")
     private fun getDeviceLocation() {
@@ -293,11 +368,8 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         }
     }
 
-
-
     private fun getLocationPermission() {
-        // Instead of directly requesting permissions, use the launcher
-        locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
     /**
@@ -310,22 +382,14 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
 
     // [END maps_current_place_on_request_permissions_result]
 
-
-
     @SuppressLint("MissingPermission")
     private fun showCurrentPlace() {
         if (map == null) {
             return
         }
         if (locationPermissionGranted) {
-            // Use fields to define the data types to return.
             val placeFields = listOf(Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG)
-
-            // Use the builder to create a FindCurrentPlaceRequest.
             val request = FindCurrentPlaceRequest.newInstance(placeFields)
-
-            // Get the likely places - that is, the businesses and other points of interest that
-            // are the best match for the device's current location.
             val placeResult = placesClient.findCurrentPlace(request)
             placeResult.addOnCompleteListener { task ->
                 if (task.isSuccessful && task.result != null) {
@@ -431,8 +495,7 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         }
     }
 
-
-    companion object {
+    companion object {// [START maps_current_place_on_request_permissions_result]
         private val TAG = ExploreFragment::class.java.simpleName
         private const val DEFAULT_ZOOM = 15
 
@@ -445,6 +508,5 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         // Used for selecting the current place.
         private const val M_MAX_ENTRIES = 5
     }
-
 
 }

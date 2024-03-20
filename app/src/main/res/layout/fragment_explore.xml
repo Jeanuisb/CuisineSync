@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_coordinator_layout"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     >
@@ -12,5 +14,34 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         />
 
+    <LinearLayout
+        android:id="@+id/bottom_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/bottom_sheet_behavior"
+        android:elevation="4dp"
+        app:behavior_peekHeight="80dp"
+        android:orientation="vertical"
+        android:background="@drawable/bottomsheetdesign"
+        >
 
-</FrameLayout>
+    <TextView
+        android:id="@+id/textViewTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Nearby Restaurants"
+        android:gravity="center"
+        android:padding="16dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvRestaurants"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp" />
+
+        </LinearLayout >
+
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

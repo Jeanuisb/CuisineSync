@@ -80,6 +80,7 @@ class LogInActivity : AppCompatActivity() {
         val emailPasswordCredentials = Credentials.emailPassword(email, password)
         try {
             val user = realmApp.login(emailPasswordCredentials)
+
             if (user.loggedIn) {
                 viewModel.saveLoginStatus(true)
                 navigateToHomePage()

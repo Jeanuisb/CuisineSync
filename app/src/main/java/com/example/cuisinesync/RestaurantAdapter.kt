@@ -5,8 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.cuisinesync.databinding.ItemRestaurantBinding
-
 
 class RestaurantAdapter(val context: Context, private val restaurants: List<YelpRestaurant>) :
     RecyclerView.Adapter<RestaurantAdapter.ViewHolder>() {
@@ -17,7 +15,7 @@ class RestaurantAdapter(val context: Context, private val restaurants: List<Yelp
         return ViewHolder(LayoutInflater.from(context).inflate(R.layout.item_restaurant, parent, false))
     }
 
-    override fun getItemCount()= restaurants.size
+    override fun getItemCount() = restaurants.size
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val restaurant = restaurants[position]
@@ -26,10 +24,8 @@ class RestaurantAdapter(val context: Context, private val restaurants: List<Yelp
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val binding = ItemRestaurantBinding.bind(itemView)
-
         fun bind(restaurant: YelpRestaurant){
-            binding.tvName.text = restaurant.name
+            itemView.tvName.text = restaurant.name
 
         }
     }

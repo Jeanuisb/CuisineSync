@@ -1,6 +1,3 @@
 package com.example.cuisinesync
 
-class LogInActivityTest {
-
-
-}
+class LogInActivityTest

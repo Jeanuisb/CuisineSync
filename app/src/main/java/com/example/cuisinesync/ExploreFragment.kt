@@ -24,7 +24,6 @@ import androidx.annotation.RequiresApi
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -54,15 +53,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 private const val BASE_URL = "https://api.yelp.com/v3/"
 
-class ExploreFragment : Fragment(), OnMapReadyCallback{
+class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
 
     private val API_KEY = BuildConfig.YELP_API_KEY
     private lateinit var rvRestaurants: RecyclerView
 
-
     private var bottomSheetContainer: CoordinatorLayout? = null
     private var bottomSheetLayout: LinearLayout? = null
-
 
     private var map: GoogleMap? = null
     private var cameraPosition: CameraPosition? = null
@@ -81,7 +78,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
     private var locationPermissionGranted = false
     private var locationRequest: LocationRequest? = null
 
-
     // The geographical location where the device is currently located. That is, the last-known
     // location retrieved by the Fused Location Provider.
     private var lastKnownLocation: Location? = null
@@ -89,7 +85,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
     private var likelyPlaceAddresses: Array<String?> = arrayOfNulls(0)
     private var likelyPlaceAttributions: Array<List<*>?> = arrayOfNulls(0)
     private var likelyPlaceLatLng: Array<LatLng?> = arrayOfNulls(0)
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,37 +105,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
                 // Consider guiding the user on how to grant the permission
             }
         }
-
-
-        val restaurants = mutableListOf<YelpRestaurant>()
-        val adapter = RestaurantAdapter(requireContext(), restaurants)
-        rvRestaurants.adapter = adapter
-        rvRestaurants.layoutManager = LinearLayoutManager(requireContext())
-
-        val retrofit = Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create()).build()
-
-        val yelpService = retrofit.create(YelpService::class.java)
-        yelpService.searchRestaurants("Bearer $API_KEY","restaurant", "Memphis").enqueue(object : Callback<YelpSearchResult> {
-            @SuppressLint("NotifyDataSetChanged")
-            override fun onResponse(call: Call<YelpSearchResult>, response: Response<YelpSearchResult>) {
-                Log.i(TAG,"onResponse $response")
-                val body = response.body()
-                if (body == null) {
-                    Log.w(TAG, "Did not receive valid response body from Yelp API... exiting")
-                    return
-                }
-                restaurants.addAll(body.restaurants)
-                adapter.notifyDataSetChanged()
-            }
-
-            override fun onFailure(call: Call<YelpSearchResult>, t: Throwable) {
-                Log.i(TAG,"onFailure $t")
-            }
-        })
-
-        initBottomSheet()
 
 
     }
@@ -174,8 +138,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         }
     }
 
-
-
     @SuppressLint("ClickableViewAccessibility")
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreateView(
@@ -188,12 +150,8 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
             lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION, Location::class.java)
             cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION, CameraPosition::class.java)
         }
-        rvRestaurants = view?.findViewById(R.id.rvRestaurants) ?: RecyclerView(requireContext())
-
 
         val mapsApiKey = BuildConfig.MAPS_API_KEY
-
-
 
         Places.initialize(requireActivity(), mapsApiKey )
         Places.createClient(requireActivity())
@@ -201,6 +159,7 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         // Initialize view
         val view: View = inflater.inflate(R.layout.fragment_explore, container, false)
 
+        rvRestaurants = view.findViewById(R.id.rvRestaurants)
 
         // Initialize map fragment
         val mapFragment =
@@ -221,6 +180,35 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         bottomSheetContainer = view.findViewById(R.id.root_coordinator_layout)
 
 
+        val restaurants = mutableListOf<YelpRestaurant>()
+        val adapter = RestaurantAdapter(requireContext(), restaurants)
+        rvRestaurants.adapter = adapter
+        rvRestaurants.layoutManager = LinearLayoutManager(requireContext())
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create()).build()
+
+        val yelpService = retrofit.create(YelpService::class.java)
+        yelpService.searchRestaurants("Bearer $API_KEY","restaurant", "Memphis").enqueue(object : Callback<YelpSearchResult> {
+            @SuppressLint("NotifyDataSetChanged")
+            override fun onResponse(call: Call<YelpSearchResult>, response: Response<YelpSearchResult>) {
+                Log.i(TAG,"onResponse $response")
+                val body = response.body()
+                if (body == null) {
+                    Log.w(TAG, "Did not receive valid response body from Yelp API... exiting")
+                    return
+                }
+                restaurants.addAll(body.restaurants)
+                adapter.notifyDataSetChanged()
+            }
+
+            override fun onFailure(call: Call<YelpSearchResult>, t: Throwable) {
+                Log.i(TAG,"onFailure $t")
+            }
+        })
+
+        initBottomSheet()
 
         // Return view
         return view
@@ -277,7 +265,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
         // [START map_current_place_set_info_window_adapter]
         // Use a custom info window adapter to handle multiple lines of text in the
         // info window contents.
-
 
         this.map?.setInfoWindowAdapter(object : GoogleMap.InfoWindowAdapter {
             // Return null here, so that getInfoContents() is called next.
@@ -356,7 +343,6 @@ class ExploreFragment : Fragment(), OnMapReadyCallback{
             .build()
         fusedLocationProviderClient.requestLocationUpdates(locationRequest!!, locationCallback, Looper.myLooper())
     }
-
 
     private val locationCallback = object : com.google.android.gms.location.LocationCallback() {
         override fun onLocationResult(locationResult: com.google.android.gms.location.LocationResult) {

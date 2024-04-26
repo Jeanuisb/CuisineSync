@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.Packaging
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -55,8 +57,11 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes +=("/META-INF/native-image/org.mongodb/bson/native-image.properties")
         }
     }
+
+
 }
 
 secrets {
@@ -92,6 +97,8 @@ dependencies {
     implementation("io.realm.kotlin:library-base:1.15.0")
     implementation("io.realm.kotlin:library-sync:1.15.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.0.1")
+    implementation("org.mongodb:bson-kotlin:5.0.1")
 
     //google maps
     implementation("com.google.android.gms:play-services-maps:18.2.0")

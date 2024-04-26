@@ -44,27 +44,35 @@ class UserRepository(private val realmApp: App) {
                     // Query for existing user
                     val existingUser = query<UserProfile>("email == $0", userData.email).first().find()
 
-                    // Create new user or update existing one
-                    val userProfile = existingUser ?: UserProfile().apply {
-                        this._id = ObjectId() // Assign a new ObjectId
-                        this.email = userData.email
-                        this.firstName = userData.firstName
-                        this.lastName = userData.lastName
-                        this.dateOfBirth = userData.dateOfBirth
-                    }
-
-                    // Add the new user to Realm if it's a new object
-                    if (!userProfile.isManaged()) {
-
+                    if (existingUser != null) {
+                        // Update existing user
+                        existingUser.firstName = userData.firstName
+                        existingUser.lastName = userData.lastName
+                        existingUser.dateOfBirth = userData.dateOfBirth
+                    } else {
+                        // Create new user
+                        val userProfile = UserProfile().apply {
+                            this._id = ObjectId() // Assign a new ObjectId
+                            this.email = userData.email
+                            this.firstName = userData.firstName
+                            this.lastName = userData.lastName
+                            this.dateOfBirth = userData.dateOfBirth
+                        }
                         copyToRealm(userProfile)
                     }
                 }
 
                 realm.syncSession.uploadAllLocalChanges()
 
-            } catch (e: Exception) {
+            }  catch (e: Exception) {
                 // Handle error, log it or notify the user
                 Log.e("Realm", "Error storing user data in MongoDB: ${e.message}")
+                // If an existing user with the same email is found, throw a specific exception
+                if (e.message?.contains("duplicate key error") == true) {
+                    throw Exception("User with email ${userData.email} already exists")
+                } else {
+                    throw e
+                }
             } finally {
                 realm.close() // Ensure to close the Realm instance when done
             }

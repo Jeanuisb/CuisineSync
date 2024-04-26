@@ -1,7 +1,9 @@
 package com.example.cuisinesync.ui.theme.data.model
 
+import io.realm.kotlin.mongodb.User
 import io.realm.kotlin.types.RealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
+import org.mongodb.kbson.BsonObjectId
 import org.mongodb.kbson.ObjectId
 
 class UserProfile : RealmObject {
@@ -17,3 +19,8 @@ class UserProfile : RealmObject {
     var lastName: String = ""
 
 }
+
+
+
+
+

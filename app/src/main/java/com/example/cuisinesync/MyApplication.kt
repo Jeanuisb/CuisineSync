@@ -8,7 +8,7 @@ import io.realm.kotlin.mongodb.App
 
 class MyApplication: Application(){
     val realmApp: App by lazy {
-        App.create("cuisinesync-mtzod") // Replace with your actual App ID
+        App.create("cuisinesync-mtzod")
     }
 
     val dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_loggedin_datastore")

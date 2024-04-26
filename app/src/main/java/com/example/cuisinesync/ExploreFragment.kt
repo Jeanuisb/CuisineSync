@@ -2,8 +2,6 @@ package com.example.cuisinesync
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.AlertDialog
-import android.content.DialogInterface
 import android.content.res.Resources
 import android.location.Location
 import android.os.Build
@@ -11,9 +9,6 @@ import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -22,13 +17,12 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.view.MenuHost
-import androidx.core.view.MenuProvider
-import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -41,8 +35,6 @@ import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import retrofit2.Call
@@ -64,6 +56,8 @@ class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
     private var map: GoogleMap? = null
     private var cameraPosition: CameraPosition? = null
 
+    private var isInitialLocationUpdate = true
+
     // Define an ActivityResultLauncher for the permission request
     private lateinit var locationPermissionLauncher: ActivityResultLauncher<String>
 
@@ -73,18 +67,12 @@ class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
     // The entry point to the Fused Location Provider.
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
-    //the lat-lang of Rhodes College Memphis, TN
-    private val defaultLocation = LatLng(35.15571630877271, -89.98937221901873)
     private var locationPermissionGranted = false
     private var locationRequest: LocationRequest? = null
 
     // The geographical location where the device is currently located. That is, the last-known
     // location retrieved by the Fused Location Provider.
     private var lastKnownLocation: Location? = null
-    private var likelyPlaceNames: Array<String?> = arrayOfNulls(0)
-    private var likelyPlaceAddresses: Array<String?> = arrayOfNulls(0)
-    private var likelyPlaceAttributions: Array<List<*>?> = arrayOfNulls(0)
-    private var likelyPlaceLatLng: Array<LatLng?> = arrayOfNulls(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -144,17 +132,13 @@ class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        setupMenu()
 
         if (savedInstanceState != null) {
             lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION, Location::class.java)
             cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION, CameraPosition::class.java)
         }
 
-        val mapsApiKey = BuildConfig.MAPS_API_KEY
-
-        Places.initialize(requireActivity(), mapsApiKey )
-        Places.createClient(requireActivity())
+        placesClient = Places.createClient(requireContext())
 
         // Initialize view
         val view: View = inflater.inflate(R.layout.fragment_explore, container, false)
@@ -210,29 +194,11 @@ class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
 
         initBottomSheet()
 
+
         // Return view
         return view
     }
 
-    private fun setupMenu() {
-        (requireActivity() as MenuHost).addMenuProvider(object : MenuProvider {
-            override fun onPrepareMenu(menu: Menu) {
-                // Handle for example visibility of menu items
-            }
-
-            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.current_place_menu, menu)
-            }
-
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                // Validate and handle the selected menu item
-                if (menuItem.itemId == R.id.option_get_place) {
-                    showCurrentPlace()
-                }
-                return true
-            }
-        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
-    }
 
     override fun onSaveInstanceState(outState: Bundle) {
         map?.let { map ->
@@ -244,6 +210,7 @@ class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
 
     //Sets up map and makes sure the camera moves to the last known location
     override fun onMapReady(p0: GoogleMap) {
+
 
         try {
             // Customise the styling of the base map using a JSON object defined
@@ -300,6 +267,7 @@ class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
         // Get the current location of the device and set the position of the map.
         getDeviceLocation()
 
+
     }
 
     @SuppressLint("MissingPermission")
@@ -310,47 +278,41 @@ class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
          */
         try {
             if (locationPermissionGranted) {
-                val locationResult = fusedLocationProviderClient.lastLocation
-                locationResult.addOnCompleteListener(requireActivity()) { task ->
-                    if (task.isSuccessful && task.result != null) {
-                        // Set the map's camera position to the current location of the device.
-                        lastKnownLocation = task.result
-                        map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            LatLng(lastKnownLocation!!.latitude,
-                                lastKnownLocation!!.longitude), DEFAULT_ZOOM.toFloat()))
-                    } else {
-                        Log.d(TAG, "Current location is null. Using defaults.")
-                        Log.e(TAG, "Exception: %s", task.exception)
-                        map?.moveCamera(CameraUpdateFactory
-                            .newLatLngZoom(defaultLocation, DEFAULT_ZOOM.toFloat()))
-                        map?.uiSettings?.isMyLocationButtonEnabled = false
-
-                        requestNewLocationData()
-                    }
-                }
+                locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
+                    .setWaitForAccurateLocation(false)
+                    .setMinUpdateIntervalMillis(2000)
+                    .setMaxUpdateDelayMillis(100)
+                    .build()
+                fusedLocationProviderClient.requestLocationUpdates(
+                    locationRequest!!,
+                    locationCallback,
+                    Looper.myLooper()
+                )
             }
         } catch (e: SecurityException) {
             Log.e("Exception: %s", e.message, e)
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private fun requestNewLocationData() {
-        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
-            .setWaitForAccurateLocation(false)
-            .setMinUpdateIntervalMillis(2000)
-            .setMaxUpdateDelayMillis(100)
-            .build()
-        fusedLocationProviderClient.requestLocationUpdates(locationRequest!!, locationCallback, Looper.myLooper())
+
+    private val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            val location = locationResult.lastLocation
+            lastKnownLocation = location
+            updateMapLocation()
+        }
     }
 
-    private val locationCallback = object : com.google.android.gms.location.LocationCallback() {
-        override fun onLocationResult(locationResult: com.google.android.gms.location.LocationResult) {
-            lastKnownLocation = locationResult.lastLocation
-            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                LatLng(lastKnownLocation!!.latitude,
-                    lastKnownLocation!!.longitude), DEFAULT_ZOOM.toFloat()))
-            fusedLocationProviderClient.removeLocationUpdates(this)
+    private fun updateMapLocation() {
+        if (map == null || lastKnownLocation == null) {
+            return
+        }
+
+        val currentLatLng = LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude)
+
+        if (isInitialLocationUpdate) {
+            map?.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, DEFAULT_ZOOM.toFloat()))
+            isInitialLocationUpdate = false
         }
     }
 
@@ -368,98 +330,7 @@ class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
 
     // [END maps_current_place_on_request_permissions_result]
 
-    @SuppressLint("MissingPermission")
-    private fun showCurrentPlace() {
-        if (map == null) {
-            return
-        }
-        if (locationPermissionGranted) {
-            val placeFields = listOf(Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG)
-            val request = FindCurrentPlaceRequest.newInstance(placeFields)
-            val placeResult = placesClient.findCurrentPlace(request)
-            placeResult.addOnCompleteListener { task ->
-                if (task.isSuccessful && task.result != null) {
-                    val likelyPlaces = task.result
 
-                    // Set the count, handling cases where less than 5 entries are returned.
-                    val count = if (likelyPlaces != null && likelyPlaces.placeLikelihoods.size < M_MAX_ENTRIES) {
-                        likelyPlaces.placeLikelihoods.size
-                    } else {
-                        M_MAX_ENTRIES
-                    }
-                    var i = 0
-                    likelyPlaceNames = arrayOfNulls(count)
-                    likelyPlaceAddresses = arrayOfNulls(count)
-                    likelyPlaceAttributions = arrayOfNulls<List<*>?>(count)
-                    likelyPlaceLatLng = arrayOfNulls(count)
-                    for (placeLikelihood in likelyPlaces?.placeLikelihoods ?: emptyList()) {
-                        // Build a list of likely places to show the user.
-                        likelyPlaceNames[i] = placeLikelihood.place.name
-                        likelyPlaceAddresses[i] = placeLikelihood.place.address
-                        likelyPlaceAttributions[i] = placeLikelihood.place.attributions
-                        likelyPlaceLatLng[i] = placeLikelihood.place.latLng
-                        i++
-                        if (i > count - 1) {
-                            break
-                        }
-                    }
-
-                    // Show a dialog offering the user the list of likely places, and add a
-                    // marker at the selected place.
-                    openPlacesDialog()
-                } else {
-                    Log.e(TAG, "Exception: %s", task.exception)
-                }
-            }
-        } else {
-            // The user has not granted permission.
-            Log.i(TAG, "The user did not grant location permission.")
-
-            // Add a default marker, because the user hasn't selected a place.
-            map?.addMarker(MarkerOptions()
-                .title(getString(R.string.default_info_title))
-                .position(defaultLocation)
-                .snippet(getString(R.string.default_info_snippet)))
-
-            // Prompt the user for permission.
-            getLocationPermission()
-        }
-    }
-
-    private fun openPlacesDialog() {
-        // Ask the user to choose the place where they are now.
-        val listener = DialogInterface.OnClickListener { _, which -> // The "which" argument contains the position of the selected item.
-            val markerLatLng = likelyPlaceLatLng[which]
-            var markerSnippet = likelyPlaceAddresses[which]
-            if (likelyPlaceAttributions[which] != null) {
-                markerSnippet = """
-                $markerSnippet
-                ${likelyPlaceAttributions[which]}
-                """.trimIndent()
-            }
-
-            if (markerLatLng == null) {
-                return@OnClickListener
-            }
-
-            // Add a marker for the selected place, with an info window
-            // showing information about that place.
-            map?.addMarker(MarkerOptions()
-                .title(likelyPlaceNames[which])
-                .position(markerLatLng)
-                .snippet(markerSnippet))
-
-            // Position the map's camera at the location of the marker.
-            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(markerLatLng,
-                DEFAULT_ZOOM.toFloat()))
-        }
-
-        // Display the dialog.
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.pick_place)
-            .setItems(likelyPlaceNames, listener)
-            .show()
-    }
 
     @SuppressLint("MissingPermission")
     private fun updateLocationUI() {
@@ -481,6 +352,18 @@ class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (locationPermissionGranted) {
+            getDeviceLocation()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+    }
+
     companion object {// [START maps_current_place_on_request_permissions_result]
         private val TAG = ExploreFragment::class.java.simpleName
         private const val DEFAULT_ZOOM = 15
@@ -491,8 +374,6 @@ class ExploreFragment : androidx.fragment.app.Fragment(), OnMapReadyCallback{
         private const val KEY_LOCATION = "location"
         // [END maps_current_place_state_keys]
 
-        // Used for selecting the current place.
-        private const val M_MAX_ENTRIES = 5
     }
 
 }

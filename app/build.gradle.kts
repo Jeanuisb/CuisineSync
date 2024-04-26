@@ -36,11 +36,13 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions {
+            jvmTarget = "17"
+        }
     }
     buildFeatures {
         compose = true
@@ -87,8 +89,8 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
-    implementation("io.realm.kotlin:library-base:1.14.1")
-    implementation("io.realm.kotlin:library-sync:1.14.1")
+    implementation("io.realm.kotlin:library-base:1.15.0")
+    implementation("io.realm.kotlin:library-sync:1.15.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
 
     //google maps
@@ -113,6 +115,10 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
     // Glide v4 uses this new annotation processor -- see https://bumptech.github.io/glide/doc/generatedapi.html
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+
+    //Animation
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
 
     testImplementation("junit:junit:4.13.2")
 

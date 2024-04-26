@@ -13,9 +13,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
-import io.realm.kotlin.query.find
 import io.realm.kotlin.types.RealmObject
-import io.realm.kotlin.types.TypedRealmObject
 import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -77,6 +75,8 @@ class EatFragment : Fragment() {
         // Initialize Realm with the correct configuration
         realm = Realm.open(RealmConfiguration.create(schema = setOf(User::class)))
 
+
+
         val apiKey = BuildConfig.YELP_API_KEY
         yelpRepository = YelpRepository(apiKey)
 
@@ -98,6 +98,15 @@ class EatFragment : Fragment() {
                     usernameEditText2.text.toString().trim(),
                     usernameEditText3.text.toString().trim()
                 )
+
+                if (usernames.all { it.isEmpty() }) {
+                    // If all usernames are empty, prompt the user to enter usernames
+                    withContext(Dispatchers.Main) {
+                        Snackbar.make(view, "Please enter at least one username", Snackbar.LENGTH_LONG).setAction("Close") {}.show()
+                    }
+                    return@launch
+                }
+
 
                 if (usernames != previousUsernames) {
                     val users = getUsersByNames(usernames)
@@ -122,11 +131,13 @@ class EatFragment : Fragment() {
                     }
                 }
 
-                displayUserIDs(view)
+                //displayUserIDs(view)
 
             }
         }
     }
+
+
 
     // Function to fetch user IDs and display them in a Snackbar
     private fun displayUserIDs(view: View) {

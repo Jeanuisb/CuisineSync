@@ -8,8 +8,12 @@ import io.realm.kotlin.ext.query
 import io.realm.kotlin.mongodb.App
 import io.realm.kotlin.mongodb.Credentials
 import io.realm.kotlin.mongodb.User
+import io.realm.kotlin.mongodb.annotations.ExperimentalFlexibleSyncApi
+import io.realm.kotlin.mongodb.ext.subscribe
 import io.realm.kotlin.mongodb.sync.SyncConfiguration
 import io.realm.kotlin.mongodb.syncSession
+import io.realm.kotlin.types.RealmObject
+import io.realm.kotlin.types.annotations.PrimaryKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.mongodb.kbson.ObjectId
@@ -34,12 +38,16 @@ class UserRepository(private val realmApp: App) {
         }
     }
 
+    @OptIn(ExperimentalFlexibleSyncApi::class)
     private suspend fun storeUserDataInMongoDB(user: User, userData: UserData) {
         withContext(Dispatchers.IO) {
             val config = SyncConfiguration.Builder(user, setOf(UserProfile::class)).build()
             val realm = Realm.open(config)
 
             try {
+                // Create a subscription for the UserProfile class
+                realm.query<UserProfile>().subscribe()
+
                 realm.writeBlocking {
                     // Query for existing user
                     val existingUser = query<UserProfile>("email == $0", userData.email).first().find()
@@ -86,6 +94,22 @@ class UserRepository(private val realmApp: App) {
         val dateOfBirth: String,
         val password: String
     )
+
+
+
+    class UserProfile : RealmObject {
+        @PrimaryKey
+        var _id: ObjectId = ObjectId()
+
+        var dateOfBirth: String = ""
+
+        var email: String = ""
+
+        var firstName: String = ""
+
+        var lastName: String = ""
+    }
+
 
 }
 

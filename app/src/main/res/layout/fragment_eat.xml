@@ -118,9 +118,10 @@
         android:id="@+id/display_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="48dp"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="@+id/update_button"
+        app:layout_constraintHorizontal_bias="0.633"
         app:layout_constraintStart_toStartOf="@+id/update_button"
         app:layout_constraintTop_toBottomOf="@+id/update_button" />
 
